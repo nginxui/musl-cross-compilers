@@ -14,7 +14,7 @@ jobs:
         variant: [pmmp/musl-cross-make, richfelker/musl-cross-make]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download aarch64 cross compiler
         uses: ./
         id: compiler
@@ -32,4 +32,4 @@ jobs:
           ls   ${{ steps.compiler.outputs.path }}
           wget https://raw.githubusercontent.com/pmmp/PHP-Binaries/master/compile.sh
           chmod a+x compile.sh
-          ./compile.sh -t android-aarch64 -x -j4 -f -s
+          ./compile.sh -t android-aarch64 -x -j4 -P5 -s
