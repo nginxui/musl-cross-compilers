@@ -58,7 +58,7 @@ const tags = {
         throw new Error(`make -j4 failed with code ${ret}`);
       }
 
-      ret = await exec.exec("sudo", ["make", install"], {
+      ret = await exec.exec("sudo", ["make", "install"], {
         cwd: destDir,
         ignoreReturnCode: true,
         env: {
