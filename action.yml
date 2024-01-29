@@ -16,5 +16,5 @@ outputs:
   directory:
     description: 'The directory where the binaries are'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'index.js'

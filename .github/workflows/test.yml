@@ -30,6 +30,6 @@ jobs:
         run: |
           echo ${{ steps.compiler.outputs.path }}
           ls   ${{ steps.compiler.outputs.path }}
-          wget https://github.com/pmmp/php-build-scripts/raw/master/compile.sh
+          wget https://raw.githubusercontent.com/pmmp/PHP-Binaries/master/compile.sh
           chmod a+x compile.sh
           ./compile.sh -t android-aarch64 -x -j4 -f -s
