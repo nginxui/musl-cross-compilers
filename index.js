@@ -47,7 +47,7 @@ const tags = {
         throw new Error(`git clone failed with code ${ret}`);
       }
 
-      ret = await exec.exec("sudo", ["make", "-j4"], {
+      ret = await exec.exec("sudo", ["-E", "make", "-j4"], {
         cwd: destDir,
         ignoreReturnCode: true,
         env: {
@@ -58,7 +58,7 @@ const tags = {
         throw new Error(`make -j4 failed with code ${ret}`);
       }
 
-      ret = await exec.exec("sudo", ["make", "install"], {
+      ret = await exec.exec("sudo", ["-E", "make", "install"], {
         cwd: destDir,
         ignoreReturnCode: true,
         env: {
