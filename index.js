@@ -47,16 +47,17 @@ const tags = {
         throw new Error(`git clone failed with code ${ret}`);
       }
 
-      // ret = await exec.exec("make", ["-j4"], {
-      //   cwd: destDir,
-      //   ignoreReturnCode: true,
-      //   env: {
-      //     TARGET: target,
-      //   },
-      // });
-      // if (ret != 0) {
-      //   throw new Error(`make -j4 failed with code ${ret}`);
-      // }
+      console.log(destDir)
+      ret = await exec.exec("make", ["-j4"], {
+        cwd: destDir,
+        ignoreReturnCode: true,
+        env: {
+          TARGET: target,
+        },
+      });
+      if (ret != 0) {
+        throw new Error(`make -j4 failed with code ${ret}`);
+      }
 
       ret = await exec.exec("make", ["install"], {
         cwd: destDir,
