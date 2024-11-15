@@ -16,7 +16,7 @@ const tags = {
 
 (async () => {
   try {
-    const url = `https://github.com/nao20010128nao/musl-cross-compilers/releases/download/${tags[variant]}/output-${target}-${variant.replace(
+    const url = `https://github.com/nginxui/musl-cross-compilers/releases/download/${tags[variant]}/output-${target}-${variant.replace(
       "/",
       "_"
     )}.tar.gz`;

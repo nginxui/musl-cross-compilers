@@ -12,6 +12,8 @@ name: Build cross compilers
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       upload_url: '${{ steps.create_release.outputs.upload_url }}'
     steps:
@@ -47,6 +49,7 @@ jobs:
           - armv7r-linux-musleabihf
           - i486-linux-musl
           - i686-linux-musl
+          - loongarch64-linux-musl
           - m68k-linux-musl
           - microblaze-linux-musl
           - microblazeel-linux-musl
