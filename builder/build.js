@@ -17,15 +17,22 @@ const data = {
     // causing Actions queue being filled for an hour
     workflow_dispatch: {
       inputs: {
-        do_release: {
-          description: 'Create a release and upload files? (type "yes" to create)',
-          required: true,
-          default: "no",
-        },
         release: {
           description: "Release tag and name",
           required: true,
         },
+        do_release: {
+          description: 'Create a release and upload files',
+          required: true,
+          default: false,
+          type: "boolean",
+        },
+        updateExisting: {
+          description: "Update existing release",
+          required: true,
+          default: true,
+          type: "boolean",
+        }
       },
     },
   },
@@ -43,8 +50,9 @@ const data = {
           name: "Create release",
           uses: "actions/create-release@v1",
           id: "create_release",
-          if: "${{ github.event.inputs.do_release == 'yes' }}",
+          if: "${{ github.event.inputs.do_release }}",
           with: {
+            allowUpdates: '${{ github.event.inputs.updateExisting }}',
             tag_name: "${{ github.event.inputs.release }}",
             release_name: "${{ github.event.inputs.release }}",
             draft: false,
@@ -110,7 +118,7 @@ const data = {
           id: "upload-releases",
           name: "Upload to releases",
           uses: "ncipollo/release-action@v1",
-          if: "\${{ github.event.inputs.do_release == 'yes' }}",
+          if: "\${{ github.event.inputs.do_release }}",
           with: {
             allowUpdates: true,
             tag: "${{ github.event.inputs.release }}",
