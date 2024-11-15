@@ -8,7 +8,7 @@ const targets = fs
   .trim()
   .split(/[\r\n]+/);
 //console.log(targets);
-const repositories = ["richfelker/musl-cross-make", "pmmp/musl-cross-make"];
+const repositories = ["richfelker/musl-cross-make", "nginxui/pmmp-musl-cross-make"];
 
 const data = {
   name: "Build cross compilers",
@@ -32,6 +32,9 @@ const data = {
   jobs: {
     prepare: {
       "runs-on": "ubuntu-latest",
+      permissions: {
+        contents: "write",
+      },
       outputs: {
         upload_url: "${{ steps.create_release.outputs.upload_url }}",
       },
@@ -55,6 +58,9 @@ const data = {
     },
     compile: {
       needs: "prepare",
+      permissions: {
+        contents: "write",
+      },
       "runs-on": "ubuntu-latest",
       "continue-on-error": true,
       strategy: {
@@ -65,7 +71,7 @@ const data = {
       },
       env: {
         TARGET: "${{ matrix.target }}",
-        REPO: "${{ matrix.repo }}",
+        REPO: "${{ matrix.repo == 'nginxui/pmmp-musl-cross-make' && 'pmmp/musl-cross-make' || matrix.repo }}",
       },
       steps: [
         { uses: "actions/checkout@v2" },
@@ -86,53 +92,38 @@ const data = {
           ),
           "working-directory": "mcm",
         },
+        {
+          id: "upload-artifacts",
+          name: "Upload artifacts",
+          if: "\${{ success() }}",
+          uses: "cytopia/upload-artifact-retry-action@v0.1.7",
+          with: {
+            path: "output-${{ matrix.target }}.tar.gz",
+            name: "${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}",
+          },
+        },
+        {
+          name: "Rename artifact",
+          run: "mv output-${{ matrix.target }}.tar.gz output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.gz"
+        },
+        {
+          id: "upload-releases",
+          name: "Upload to releases",
+          uses: "ncipollo/release-action@v1",
+          if: "\${{ github.event.inputs.do_release == 'yes' }}",
+          with: {
+            allowUpdates: true,
+            tag: "${{ github.event.inputs.release }}",
+            artifacts: "output-${{ matrix.target }}*.tar.gz",
+            artifactContentType: "application/gzip",
+          },
+          env: {
+            GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}",
+          },
+        },
       ],
     },
   },
 };
-
-const retries = 5;
-for (let i = 0; i < retries; i++) {
-  let artifactsIf, releasesIf, continueOnError;
-  if (i == 0) {
-    artifactsIf = `\${{ success() }}`;
-    releasesIf = `\${{ github.event.inputs.do_release == 'yes' }}`;
-  } else {
-    artifactsIf = `\${{ steps.upload-artifacts-${i - 1}.outcome == 'failure' }}`;
-    releasesIf = `\${{ github.event.inputs.do_release == 'yes' && steps.upload-releases-${i - 1}.outcome == 'failure' }}`;
-  }
-  continueOnError = i == retries - 1;
-  const uploadSteps = [
-    {
-      id: `upload-artifacts-${i}`,
-      name: `Upload artifacts ${i}`,
-      if: artifactsIf,
-      "continue-on-error": continueOnError,
-      uses: "actions/upload-artifact@v2",
-      with: {
-        path: "output-${{ matrix.target }}.tar.gz",
-        name: "${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}",
-      },
-    },
-    {
-      id: `upload-releases-${i}`,
-      name: `Upload to releases ${i}`,
-      uses: "actions/upload-release-asset@v1",
-      if: releasesIf,
-      "continue-on-error": continueOnError,
-      with: {
-        asset_path: "output-${{ matrix.target }}.tar.gz",
-        asset_name: "output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.gz",
-        upload_url: "${{ needs.prepare.outputs.upload_url }}",
-        asset_content_type: "application/gzip",
-      },
-      env: {
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}",
-      },
-    },
-  ];
-
-  data.jobs.compile.steps.push(...uploadSteps);
-}
 
 console.log(yaml.dump(data));
