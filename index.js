@@ -29,21 +29,21 @@ const tags = {
       let ret = await exec.exec("sudo", ["apt", "update"], {
         ignoreReturnCode: true,
       });
-      if (ret != 0) {
+      if (ret !== 0) {
         console.error(`apt update failed with code ${ret}`);
       }
 
       ret = await exec.exec("sudo", ["apt", "install", "--reinstall", "gcc", "g++", "cpp-11", "cpp-9"], {
         ignoreReturnCode: true,
       });
-      if (ret != 0) {
+      if (ret !== 0) {
         console.error(`apt install failed with code ${ret}`);
       }
 
       ret = await exec.exec("git", ["clone", `https://github.com/${variant}.git`, destDir], {
         ignoreReturnCode: true,
       });
-      if (ret != 0) {
+      if (ret !== 0) {
         throw new Error(`git clone failed with code ${ret}`);
       }
 
@@ -54,7 +54,7 @@ const tags = {
           TARGET: target,
         },
       });
-      if (ret != 0) {
+      if (ret !== 0) {
         throw new Error(`make -j4 failed with code ${ret}`);
       }
 
@@ -65,7 +65,7 @@ const tags = {
           TARGET: target,
         },
       });
-      if (ret != 0) {
+      if (ret !== 0) {
         throw new Error(`make install failed with code ${ret}`);
       }
       cachedPath = destDir;
@@ -86,7 +86,7 @@ const tags = {
     core.setOutput("path", cachedPath);
   } catch (e) {
     if (build) {
-      console.log("Build error occured and uploading build directory as artifacts");
+      console.log("Build error occurred and uploading build directory as artifacts");
       await exec.exec("tar", ["-czf", "/opt/mcm.tar.gz", buildDir]);
       const artifact = require("@actions/artifact");
       const artifactClient = artifact.create();
