@@ -81,6 +81,10 @@ jobs:
           # Exclude unsupported targets
           - target: loongarch64-linux-musl
             repo: richfelker/musl-cross-make
+          - target: sh2-linux-muslfdpic
+            repo: userdocs/qbt-musl-cross-make
+          - target: sh2eb-linux-muslfdpic
+            repo: userdocs/qbt-musl-cross-make
     env:
       TARGET: ${{ matrix.target }}
       REPO: ${{ matrix.repo }}
