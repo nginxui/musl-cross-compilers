@@ -33,8 +33,8 @@ jobs:
       contents: write
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      matrix_repos: ${{ steps.triples.outputs.matrix_repos }}
-      matrix_targets: ${{ steps.triples.outputs.matrix_targets }}
+      matrix_repos: ${{ steps.build_matrix.outputs.matrix_repos }}
+      matrix_targets: ${{ steps.build_matrix.outputs.matrix_targets }}
     steps:
       - name: Create release
         uses: ncipollo/release-action@v1
@@ -50,7 +50,7 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: Bootstrap the matrix
-        id: triples
+        id: build_matrix
         run: |
           if [ "${{ github.event.inputs.repo }}" = "both" ]; then
             echo "matrix_repos=['richfelker/musl-cross-make', 'userdocs/qbt-musl-cross-make']" >> $GITHUB_OUTPUT
@@ -59,7 +59,7 @@ jobs:
           fi
           
           if [ -z "${{ github.event.inputs.target }}" ]; then
-            echo "matrix_targets=$(jq -R -s 'split("\n") | map(select(length > 0))' .github/targets.txt)" >> $GITHUB_OUTPUT
+            echo "matrix_targets=$(jq -R -s 'split("\n") | map(select(length > 0))' .github/build/targets.txt)" >> $GITHUB_OUTPUT
           else
             echo "matrix_targets=['${{ github.event.inputs.target }}']" >> $GITHUB_OUTPUT
           fi
@@ -88,9 +88,22 @@ jobs:
       - name: 'Clone ${{ matrix.repo }}'
         run: 'git clone https://github.com/${{ matrix.repo }} mcm'
 
+      - name: Set ${{ matrix.target }} musl with configurations
+        if: matrix.repo == 'userdocs/qbt-musl-cross-make'
+        run: |
+          export CONFIGURE=$(jq ".[\"${{ matrix.target }}\"]" .github/build/configures.json -r)
+          if [ "$CONFIGURE" ]; then
+            echo "Add configuration $CONFIGURE"
+            sed "s|GCC_CONFIG_FOR_TARGET +=|GCC_CONFIG_FOR_TARGET += $CONFIGURE|" -i mcm/config.mak
+          fi
+
       - name: Disable binutils gold for loongarch64
         if: matrix.target == 'loongarch64-linux-musl'
         run: sed "s| --enable-gold=yes||" -i config.mak
+        working-directory: mcm
+
+      - name: Show updated config.mak
+        run: cat config.mak
         working-directory: mcm
 
       - name: 'Build ${{ matrix.target }}'
