@@ -49,6 +49,9 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap the matrix
         id: build_matrix
         run: |
@@ -59,7 +62,7 @@ jobs:
           fi
           
           if [ -z "${{ github.event.inputs.target }}" ]; then
-            echo "matrix_targets=$(jq -R -s 'split("\n") | map(select(length > 0))' .github/build/targets.txt)" >> $GITHUB_OUTPUT
+            echo "matrix_targets=$(jq -c -R -s 'split("\n") | map(select(length > 0))' .github/build/targets.txt)" >> $GITHUB_OUTPUT
           else
             echo "matrix_targets=['${{ github.event.inputs.target }}']" >> $GITHUB_OUTPUT
           fi

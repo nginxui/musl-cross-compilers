@@ -1,6 +1,12 @@
 on:
   push:
     branches: [master]
+    paths:
+      - 'index.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'action.yml'
+      - 'node_modules/**'
 
 name: Test this action
 
@@ -15,6 +21,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Download aarch64 cross compiler
         uses: ./
         id: compiler
@@ -22,10 +29,12 @@ jobs:
           target: aarch64-linux-musl
           variant: ${{ matrix.variant }}
           build: ${{ matrix.build }}
+
       - name: Install deps
         run: |
           sudo apt-get update
           sudo apt-get install -y make autoconf automake libtool-bin m4 wget gzip bzip2 bison g++ re2c
+
       - name: Build project
         run: |
           echo ${{ steps.compiler.outputs.path }}
