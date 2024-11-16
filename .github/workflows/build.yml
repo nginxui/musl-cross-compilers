@@ -119,7 +119,7 @@ jobs:
       - name: Package ${{ matrix.target }}
         id: package
         run: |-
-          tar -I zstdmt -cvf ../output-${{ matrix.target }}.tar.zst output/
+          tar -I "zstdmt --ultra -20" -cvf ../output-${{ matrix.target }}.tar.zst output/
           echo "source_escaped=${REPO%%/*}_${REPO##*/}" >> $GITHUB_OUTPUT
         working-directory: mcm
 
