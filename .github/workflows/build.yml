@@ -83,10 +83,10 @@ jobs:
       REPO: ${{ matrix.repo }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: 'Clone ${{ matrix.repo }}'
-        run: 'git clone https://github.com/${{ matrix.repo }} mcm'
+      - name: Clone ${{ matrix.repo }}
+        run: git clone https://github.com/${{ matrix.repo }} mcm
 
       - name: Set ${{ matrix.target }} musl with configurations
         if: matrix.repo == 'userdocs/qbt-musl-cross-make'
@@ -106,40 +106,40 @@ jobs:
         run: cat config.mak
         working-directory: mcm
 
-      - name: 'Build ${{ matrix.target }}'
+      - name: Build ${{ matrix.target }}
         run: |-
           make -j4
           make install
           ls output
         working-directory: mcm
 
-      - name: 'Package ${{ matrix.target }}'
+      - name: Package ${{ matrix.target }}
         id: package
         run: |-
-          tar -czvf ../output-${{ matrix.target }}.tar.gz output/
+          XZ_OPT=-9T0 tar -cvJf ../output-${{ matrix.target }}.tar.xz output/
           echo "source_escaped=${REPO%%/*}_${REPO##*/}" >> $GITHUB_OUTPUT
         working-directory: mcm
 
       - id: upload-artifacts
         name: Upload artifacts
-        if: '${{ success() }}'
+        if: ${{ success() }}
         uses: cytopia/upload-artifact-retry-action@v0.1.7
         with:
-          path: 'output-${{ matrix.target }}.tar.gz'
-          name: '${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}'
+          path: output-${{ matrix.target }}.tar.xz
+          name: ${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}
 
       - name: Rename artifact
-        run: mv output-${{ matrix.target }}.tar.gz output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.gz
+        run: mv output-${{ matrix.target }}.tar.xz output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.xz
 
       - id: upload-releases
         name: Upload to releases
         uses: ncipollo/release-action@v1
-        if: '${{ github.event.inputs.do_release }}'
+        if: ${{ github.event.inputs.do_release }}
         with:
           allowUpdates: true
-          tag: '${{ github.event.inputs.release }}'
-          artifacts: 'output-${{ matrix.target }}*.tar.gz'
+          tag: ${{ github.event.inputs.release }}
+          artifacts: output-${{ matrix.target }}*.tar.xz
           artifactContentType: application/gzip
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

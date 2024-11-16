@@ -19,7 +19,7 @@ const tags = {
     const url = `https://github.com/nginxui/musl-cross-compilers/releases/download/${tags[variant]}/output-${target}-${variant.replace(
       "/",
       "_"
-    )}.tar.gz`;
+    )}.tar.xz`;
 
     let cachedPath;
     if (build) {
@@ -70,14 +70,14 @@ const tags = {
       }
       cachedPath = destDir;
     } else {
-      cachedPath = tc.find("mcm", `${target}-${variant}.tar.gz`);
+      cachedPath = tc.find("mcm", `${target}-${variant}.tar.xz`);
     }
     if (cachedPath) {
       console.log(`Found installation at ${cachedPath}`);
     } else {
       const toolchainPath = await tc.downloadTool(url);
       const toolchainExtractedFolder = await tc.extractTar(toolchainPath);
-      cachedPath = await tc.cacheDir(toolchainExtractedFolder, "mcm", `${target}-${variant}.tar.gz`);
+      cachedPath = await tc.cacheDir(toolchainExtractedFolder, "mcm", `${target}-${variant}.tar.xz`);
       console.log(`Installed at ${cachedPath}`);
     }
     cachedPath = path.join(cachedPath, "output", "bin");
@@ -87,11 +87,15 @@ const tags = {
   } catch (e) {
     if (build) {
       console.log("Build error occurred and uploading build directory as artifacts");
-      await exec.exec("tar", ["-czf", "/opt/mcm.tar.gz", buildDir]);
+      await exec.exec("tar", ["-cJf", "/opt/mcm.tar.xz", buildDir], {
+        env: {
+          XZ_OPT: "-9T0"
+        }
+      });
       const artifact = require("@actions/artifact");
       const artifactClient = artifact.create();
       const artifactName = `musl-cross-compiler-error-${target}-${variant.replace("/", "_")}`;
-      const files = ["/opt/mcm.tar.gz"];
+      const files = ["/opt/mcm.tar.xz"];
       const rootDirectory = "/opt/";
       const options = {};
       await artifactClient.uploadArtifact(artifactName, files, rootDirectory, options);
