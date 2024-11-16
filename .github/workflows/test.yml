@@ -7,6 +7,7 @@ on:
       - 'package-lock.json'
       - 'action.yml'
       - 'node_modules/**'
+      - '.github/workflows/test.yml'
 
 name: Test this action
 
@@ -18,6 +19,8 @@ jobs:
       matrix:
         build: [false, true]
         variant: [richfelker/musl-cross-make, userdocs/qbt-musl-cross-make]
+    env:
+      REPO: ${{ matrix.variant }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,9 +39,27 @@ jobs:
           sudo apt-get install -y make autoconf automake libtool-bin m4 wget gzip bzip2 bison g++ re2c
 
       - name: Build project
+        id: build
         run: |
+          echo "source_escaped=${REPO%%/*}_${REPO##*/}" >> $GITHUB_OUTPUT
           echo ${{ steps.compiler.outputs.path }}
           ls   ${{ steps.compiler.outputs.path }}
           wget https://raw.githubusercontent.com/pmmp/PHP-Binaries/master/compile.sh
           chmod a+x compile.sh
+          trap "exit 1" ERR
           ./compile.sh -t android-aarch64 -x -j4 -P5 -s
+
+      - name: Create tarball
+        run: |
+          tar -czf ./PHP-Linux-aarch64-PM5.tar.gz bin
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Linux-PM5-${{ steps.build.outputs.source_escaped }}-${{ matrix.build }}
+          path: |
+            ./PHP-Linux-aarch64-PM*.tar.gz
+            install.log
+            compile.sh
+          if-no-files-found: error
