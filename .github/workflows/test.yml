@@ -40,6 +40,9 @@ jobs:
 
       - name: Build project
         id: build
+        env:
+          CFLAGS: -D_LARGEFILE64_SOURCE -Wno-incompatible-pointer-types
+          CXXFLAGS: -D_LARGEFILE64_SOURCE -Wno-incompatible-pointer-types
         run: |
           echo "source_escaped=${REPO%%/*}_${REPO##*/}" >> $GITHUB_OUTPUT
           echo ${{ steps.compiler.outputs.path }}
