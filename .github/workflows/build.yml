@@ -110,6 +110,7 @@ jobs:
         working-directory: mcm
 
       - name: Show updated config.mak
+        if: matrix.repo == 'userdocs/qbt-musl-cross-make'
         run: cat config.mak
         working-directory: mcm
 
