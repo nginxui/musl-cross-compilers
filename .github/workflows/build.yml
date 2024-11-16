@@ -10,31 +10,60 @@ name: Build cross compilers
         required: true
         default: false
         type: boolean
-      updateExisting:
+      update_existing:
         description: Update existing release
         required: true
         default: true
         type: boolean
+      repo:
+        description: Build repository
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - richfelker/musl-cross-make
+          - userdocs/qbt-musl-cross-make
+      target:
+        description: Target name (leave empty to build all)
 jobs:
   prepare:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
-      upload_url: '${{ steps.create_release.outputs.upload_url }}'
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      matrix_repos: ${{ steps.triples.outputs.matrix_repos }}
+      matrix_targets: ${{ steps.triples.outputs.matrix_targets }}
     steps:
       - name: Create release
         uses: ncipollo/release-action@v1
         id: create_release
         if: '${{ github.event.inputs.do_release }}'
         with:
-          allowUpdates: '${{ github.event.inputs.updateExisting }}'
+          allowUpdates: '${{ github.event.inputs.update_existing }}'
           tag: '${{ github.event.inputs.release }}'
           name: '${{ github.event.inputs.release }}'
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Bootstrap the matrix
+        id: triples
+        run: |
+          if [ "${{ github.event.inputs.repo }}" = "both" ]; then
+            echo "matrix_repos=['richfelker/musl-cross-make', 'userdocs/qbt-musl-cross-make']" >> $GITHUB_OUTPUT
+          else
+            echo "matrix_repos=['${{ github.event.inputs.repo }}']" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -z "${{ github.event.inputs.target }}" ]; then
+            echo "matrix_targets=$(jq -R -s 'split("\n") | map(select(length > 0))' .github/targets.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "matrix_targets=['${{ github.event.inputs.target }}']" >> $GITHUB_OUTPUT
+          fi
+
   compile:
     needs: prepare
     runs-on: ubuntu-latest
@@ -43,67 +72,26 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        target:
-          - aarch64-linux-musl
-          - aarch64_be-linux-musl
-          - arm-linux-musleabi
-          - arm-linux-musleabihf
-          - armeb-linux-musleabi
-          - armeb-linux-musleabihf
-          - armel-linux-musleabi
-          - armel-linux-musleabihf
-          - armv5l-linux-musleabihf
-          - armv7l-linux-musleabihf
-          - armv7m-linux-musleabi
-          - armv7r-linux-musleabihf
-          - i486-linux-musl
-          - i686-linux-musl
-          - loongarch64-linux-musl
-          - m68k-linux-musl
-          - microblaze-linux-musl
-          - microblazeel-linux-musl
-          - mips-linux-musl
-          - mips-linux-musln32sf
-          - mips-linux-muslsf
-          - mips64-linux-musl
-          - mips64-linux-musln32
-          - mips64-linux-musln32sf
-          - mips64el-linux-musl
-          - mips64el-linux-musln32
-          - mips64el-linux-musln32sf
-          - mipsel-linux-musl
-          - mipsel-linux-musln32
-          - mipsel-linux-musln32sf
-          - mipsel-linux-muslsf
-          - or1k-linux-musl
-          - powerpc-linux-musl
-          - powerpc-linux-muslsf
-          - powerpc64-linux-musl
-          - powerpc64le-linux-musl
-          - powerpcle-linux-musl
-          - powerpcle-linux-muslsf
-          - riscv64-linux-musl
-          - s390x-linux-musl
-          - sh2-linux-musl
-          - sh2-linux-muslfdpic
-          - sh2eb-linux-musl
-          - sh2eb-linux-muslfdpic
-          - sh4-linux-musl
-          - sh4eb-linux-musl
-          - x86_64-linux-musl
-          - x86_64-linux-muslx32
-        repo:
-          - richfelker/musl-cross-make
-          - nginxui/pmmp-musl-cross-make
+        target: ${{ fromJson(needs.prepare.outputs.matrix_targets) }}
+        repo: ${{ fromJson(needs.prepare.outputs.matrix_repos) }}
+        exclude:
+          # Exclude unsupported targets
+          - target: loongarch64-linux-musl
+            repo: richfelker/musl-cross-make
     env:
       TARGET: ${{ matrix.target }}
-      REPO: ${{ matrix.repo == 'nginxui/pmmp-musl-cross-make' && 'pmmp/musl-cross-make' || matrix.repo }}
+      REPO: ${{ matrix.repo }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: 'Clone ${{ matrix.repo }}'
         run: 'git clone https://github.com/${{ matrix.repo }} mcm'
+
+      - name: Disable binutils gold for loongarch64
+        if: matrix.target == 'loongarch64-linux-musl'
+        run: sed "s| --enable-gold=yes||" -i config.mak
+        working-directory: mcm
 
       - name: 'Build ${{ matrix.target }}'
         run: |-

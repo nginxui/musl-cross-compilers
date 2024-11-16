@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         build: [false, true]
-        variant: [pmmp/musl-cross-make, richfelker/musl-cross-make]
+        variant: [richfelker/musl-cross-make, userdocs/qbt-musl-cross-make]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
