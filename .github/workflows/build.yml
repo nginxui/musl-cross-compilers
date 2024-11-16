@@ -119,7 +119,7 @@ jobs:
       - name: Package ${{ matrix.target }}
         id: package
         run: |-
-          XZ_OPT=-9T0 tar -cvJf ../output-${{ matrix.target }}.tar.xz output/
+          tar -I zstdmt -cvf ../output-${{ matrix.target }}.tar.zst output/
           echo "source_escaped=${REPO%%/*}_${REPO##*/}" >> $GITHUB_OUTPUT
         working-directory: mcm
 
@@ -128,11 +128,11 @@ jobs:
         if: ${{ success() }}
         uses: cytopia/upload-artifact-retry-action@v0.1.7
         with:
-          path: output-${{ matrix.target }}.tar.xz
+          path: output-${{ matrix.target }}.tar.zst
           name: ${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}
 
       - name: Rename artifact
-        run: mv output-${{ matrix.target }}.tar.xz output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.xz
+        run: mv output-${{ matrix.target }}.tar.zst output-${{ matrix.target }}-${{ steps.package.outputs.source_escaped }}.tar.zst
 
       - id: upload-releases
         name: Upload to releases
@@ -141,7 +141,7 @@ jobs:
         with:
           allowUpdates: true
           tag: ${{ github.event.inputs.release }}
-          artifacts: output-${{ matrix.target }}*.tar.xz
+          artifacts: output-${{ matrix.target }}*.tar.zst
           artifactContentType: application/gzip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
