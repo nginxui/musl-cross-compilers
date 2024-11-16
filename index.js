@@ -15,11 +15,9 @@ const tags = {
 };
 
 (async () => {
+  const escapedVariant = variant.replace("/", "_");
   try {
-    const url = `https://github.com/nginxui/musl-cross-compilers/releases/download/${tags[variant]}/output-${target}-${variant.replace(
-      "/",
-      "_"
-    )}.tar.zst`;
+    const url = `https://github.com/nginxui/musl-cross-compilers/releases/download/${tags[variant]}/output-${target}-${escapedVariant}.tar.zst`;
 
     let cachedPath;
     if (build) {
@@ -70,14 +68,14 @@ const tags = {
       }
       cachedPath = destDir;
     } else {
-      cachedPath = tc.find("mcm", `${target}-${variant}.tar.zst`);
+      cachedPath = tc.find("mcm", `${target}-${escapedVariant}.tar.zst`);
     }
     if (cachedPath) {
       console.log(`Found installation at ${cachedPath}`);
     } else {
       const toolchainPath = await tc.downloadTool(url);
       const toolchainExtractedFolder = await tc.extractTar(toolchainPath, undefined, "ax");
-      cachedPath = await tc.cacheDir(toolchainExtractedFolder, "mcm", `${target}-${variant}.tar.zst`);
+      cachedPath = await tc.cacheDir(toolchainExtractedFolder, "mcm", `${target}-${escapedVariant}.tar.zst`);
       console.log(`Installed at ${cachedPath}`);
     }
     cachedPath = path.join(cachedPath, "output", "bin");
@@ -90,7 +88,7 @@ const tags = {
       await exec.exec("tar", ["-I", "zstdmt", "-cf", "/opt/mcm.tar.zst", buildDir]);
       const artifact = require("@actions/artifact");
       const artifactClient = artifact.create();
-      const artifactName = `musl-cross-compiler-error-${target}-${variant.replace("/", "_")}`;
+      const artifactName = `musl-cross-compiler-error-${target}-${escapedVariant}`;
       const files = ["/opt/mcm.tar.zst"];
       const rootDirectory = "/opt/";
       const options = {};
