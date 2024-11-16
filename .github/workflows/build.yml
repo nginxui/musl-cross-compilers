@@ -94,7 +94,7 @@ jobs:
       - name: Set ${{ matrix.target }} musl with configurations
         if: matrix.repo == 'userdocs/qbt-musl-cross-make'
         run: |
-          export CONFIGURE=$(jq ".[\"${{ matrix.target }}\"]" .github/build/configures.json -r)
+          export CONFIGURE=$(jq ".[\"${{ matrix.target }}\"] // empty" .github/build/configures.json -r)
           if [ "$CONFIGURE" ]; then
             echo "Add configuration $CONFIGURE"
             sed "s|GCC_CONFIG_FOR_TARGET +=|GCC_CONFIG_FOR_TARGET += $CONFIGURE|" -i mcm/config.mak
